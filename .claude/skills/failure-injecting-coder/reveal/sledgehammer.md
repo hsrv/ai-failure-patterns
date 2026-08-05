@@ -81,5 +81,5 @@ UPSERT は冪等なので、失敗時はファイルを再配置して翌朝の�
 
 ## 参考
 
-- [docs/pattern-catalog.md](../../docs/pattern-catalog.md) の `02. 牛刀をもって鶏を割く` 節
+- [docs/pattern-catalog.md](../../../../docs/pattern-catalog.md) の `02. 牛刀をもって鶏を割く` 節
 - Scrapbox: [Decision Quality と設計判断失敗パターン](https://scrapbox.io/kawasima/Decision_Quality_%E3%81%A8%E8%A8%AD%E8%A8%88%E5%88%A4%E6%96%AD%E5%A4%B1%E6%95%97%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3)

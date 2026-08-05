@@ -14,3 +14,12 @@ docs/self-test-results-recheck.md
 # エディタの言語サーバ／リンタのキャッシュ（clojure-lsp・clj-kondo。ローカル生成物）
 .clj-kondo/
 .lsp/
+
+# 演習で生成される実装とビルド出力。追跡するのは requirements.md だけ。
+# 混入済みの実装がリポジトリに残ると、次の受講者が過去の出力を読めてしまう。
+# 課題フォルダに追跡したいファイル（共通の種アプリなど）を置くときは git add -f で明示する。
+exercises/*/*
+!exercises/*/requirements.md
+
+# macOS がディレクトリを開くたびに作る
+.DS_Store

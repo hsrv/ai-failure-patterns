@@ -70,5 +70,5 @@ CLAUDE.md や AGENTS.md に既存規約をリスト化し、新規コード生�
 
 ## 参考
 
-- [docs/pattern-catalog.md](../../docs/pattern-catalog.md) の `13. 郷に従わぬ正論` 節
+- [docs/pattern-catalog.md](../../../../docs/pattern-catalog.md) の `13. 郷に従わぬ正論` 節
 - Scrapbox: [Decision Quality と設計判断失敗パターン](https://scrapbox.io/kawasima/Decision_Quality_%E3%81%A8%E8%A8%AD%E8%A8%88%E5%88%A4%E6%96%AD%E5%A4%B1%E6%95%97%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3)
