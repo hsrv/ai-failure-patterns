@@ -26,7 +26,7 @@
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
+- .NET Framework 4.8 / WPF
 - 既存の `products` テーブル（`product_id`, `name`, `stock_quantity`, `category`）と `users` テーブルを使う
 - 通知手段は社内メール（社内 SMTP は利用可）
 

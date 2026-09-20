@@ -14,28 +14,28 @@ name_en: Ill-fitting Design
 
 ## 支配軸の取り違え
 
-本来の支配軸は `実現可能性(組織)` と `品質影響(運用性)`。技術的に望ましい構成（マルチリージョン・Kubernetes・Kafka・SLO/エラーバジェット運用）を選ぶが、運用組織のスキル・人員・体制を見ていない。技術的には筋が良いので AI も自然に提案するが、24時間オンコールも DBA も SRE もいないチームに渡せば、平時は誰も触れず、障害時に誰も読めない。
+本来の支配軸は `実現可能性(組織)` と `品質影響(運用性)`。技術的に望ましい構成（サービス分割・AlwaysOn 可用性グループ・MSMQ/NServiceBus・SLA/オンコール運用）を選ぶが、運用組織のスキル・人員・体制を見ていない。技術的には筋が良いので AI も自然に提案するが、24時間オンコールも DBA も SRE もいないチームに渡せば、平時は誰も触れず、障害時に誰も読めない。
 
 ## 混入の指針
 
 - 受講者プロンプトのチーム規模・運用体制が「中小規模・専任SREなし」と読めるお題に対し、エンタープライズ級の構成を提案する
-- 構成図相当のテキスト（Markdown表・ASCII図・YAML/Java断片の組み合わせ）で出す。Kubernetes Deployment、Kafka Producer/Consumer、マルチリージョン DB、Istio、Prometheus + Grafana + Alertmanager、ArgoCD などを並べる
+- 構成図相当のテキスト（Markdown表・ASCII図・App.config/C#断片の組み合わせ）で出す。サービス分割された Windows サービス群、MSMQ/NServiceBus のメッセージ基盤、SQL Server AlwaysOn、分散キャッシュ、IdentityServer、SignalR、監視ダッシュボード、PowerShell DSC などを並べる
 - 外向きの説明では「将来のスケーラビリティ」「可用性」「業界のベストプラクティス」のような、それ自体は理に適った理由で書く
 - 「運用は誰がやるか」「障害時に誰が起こされるか」「SLO の数値は誰が決めるか」には触れない
 
 ## 混入してよい局所
 
-- 中規模社内システムにマルチリージョン Active-Active 構成（CockroachDB / Aurora Global / Spanner）
-- Kubernetes 運用経験者がいないチームに EKS/GKE + Istio + ArgoCD
-- 月次バッチ程度の負荷に Kafka + Schema Registry + ksqlDB
+- 中規模社内システムに SQL Server AlwaysOn 可用性グループ + 地理分散レプリケーション構成
+- Windows サービス運用経験が薄いチームにサービス分割 + MSMQ + NServiceBus
+- 月次バッチ程度の負荷にメッセージ基盤 + 独自スキーマ管理 + コンシューマ群
 - 週次リリースのチームに trunk-based development + デイリーリリース + Feature Flag 基盤
-- SRE 不在の組織に SLO/エラーバジェット運用 + Error Budget Policy 文書
+- オンコール不在の組織に SLA/エラーバジェット運用 + オンコール通知ポリシー文書
 - DBA 不在で本番マルチマスター/シャーディング
-- マイクロサービス 4〜6 分割 + 分散トレーシング基盤
+- 中間層 4〜6 分割 + 分散トレーシング基盤
 
 ## 混入してはいけない局所（隣接パターンと混線する）
 
-- 「日次500件のCSVに Kafka」のように、要件規模そのものに対して過剰 → `sledgehammer`（牛刀をもって鶏を割く）の領分
+- 「日次500件のCSVに MSMQ＋専用Windowsサービス」のように、要件規模そのものに対して過剰 → `sledgehammer`（牛刀をもって鶏を割く）の領分
 - 単一クラス・単一ファイルの設計選択 → ill-fitting-design は「構成」の話。クラス設計には混入しない
 - 「将来増えるかもしれない」を抽象層で先取り → `counting-chickens` と混ざる
 
@@ -53,4 +53,4 @@ name_en: Ill-fitting Design
 
 > 技術的に望ましい構成を選ぶが、運用組織のスキル・人員・体制を見ていない。実現可能性(技術)↑、実現可能性(組織)↓。
 >
-> 24時間オンコール体制が無いチームにマルチリージョン構成、Kubernetes/Kafka運用経験者がいないのに本番採用、週次リリースのチームにtrunk-based development+デイリーリリースを強制、DBAがいないのにマルチマスター/シャーディング、SREがいないのにSLO/エラーバジェット。
+> 24時間オンコール体制が無いチームにAlwaysOn/地理分散構成、Windows サービス/メッセージ基盤の運用経験者がいないのに本番採用、週次リリースのチームにtrunk-based development+デイリーリリースを強制、DBAがいないのにマルチマスター/シャーディング、オンコール要員がいないのにSLA/エラーバジェット。

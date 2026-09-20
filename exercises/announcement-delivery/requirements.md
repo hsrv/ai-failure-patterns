@@ -24,7 +24,7 @@
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
+- .NET Framework 4.8 / WPF
 - 社内 SMTP サーバを使う
 - ユーザーマスタは既存（`users` テーブルに `id`, `name`, `email`, `department`, `position` を持つ）
 

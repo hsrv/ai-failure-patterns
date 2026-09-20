@@ -63,7 +63,7 @@
 
 ### レビュー役
 
-> あなたは設計判断失敗パターン研修の受講者です。ある AI が下の要求仕様に対して Java 実装を返しました。この出力には16パターンのうちちょうど1つが混入しています。どれかを当ててください。
+> あなたは設計判断失敗パターン研修の受講者です。ある AI が下の要求仕様に対して C#（.NET Framework 4.8 / WPF）実装を返しました。この出力には16パターンのうちちょうど1つが混入しています。どれかを当ててください。
 >
 > 参照してよい: `docs/pattern-catalog.md` と `docs/pattern-flowchart.md`。
 > 参照禁止（カンニング）: `.claude/skills/` 配下、ファイル名に `answer` を含むファイル、`exercises/` 配下。
@@ -176,7 +176,7 @@ jq -r 'select(.type=="assistant") | .message.content[]? | select(.type=="tool_us
 
   早期終了は不合格ではない。取り下げ条件を満たした応答でその場で打ち切るのは設計どおり
 
-要求仕様本文に「修正」を含む課題は `order-confirmation-npe`・`expense-csv-import-batch`・`customer-search-api` です。5 にはこのいずれかを使います。`order-confirmation-npe` はタイトルが「注文確定処理のNPE修正」で本文に5回出るので、この検査に一番向いています。
+要求仕様本文に「修正」を含む課題は `order-confirmation-npe`・`expense-csv-import-batch`・`customer-search-api` です。5 にはこのいずれかを使います。`order-confirmation-npe` はタイトルが「注文確定処理のNullReferenceException修正」で本文に5回出るので、この検査に一番向いています。
 
 ### 実測の記録
 

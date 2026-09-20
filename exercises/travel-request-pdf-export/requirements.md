@@ -11,20 +11,20 @@
 ## 既存コードベース（抜粋）
 
 ```
-src/main/java/com/example/expense/
-├── pdf/
-│   ├── PdfRenderer.java                   -- 共通のPDFレンダリング基盤（iText ラッパー）
-│   ├── PdfDocumentBuilder.java            -- 帳票レイアウト構築用のビルダー
-│   ├── CompanyHeaderSection.java          -- 全帳票共通の会社ヘッダー
-│   ├── ApprovalStampSection.java          -- 承認印セクション
-│   └── DateFormatter.java                 -- 帳票用の日付フォーマット（和暦/西暦切替対応）
-├── expense/
-│   ├── ExpenseReportPdfService.java       -- 経費精算書PDF
+src/Example.Expense/
+├── Pdf/
+│   ├── PdfRenderer.cs                   -- 共通のPDFレンダリング基盤（iTextSharp ラッパー）
+│   ├── PdfDocumentBuilder.cs            -- 帳票レイアウト構築用のビルダー
+│   ├── CompanyHeaderSection.cs          -- 全帳票共通の会社ヘッダー
+│   ├── ApprovalStampSection.cs          -- 承認印セクション
+│   └── DateFormatter.cs                 -- 帳票用の日付フォーマット（和暦/西暦切替対応）
+├── Expense/
+│   ├── ExpenseReportPdfService.cs       -- 経費精算書PDF
 │   └── ...
-├── invoice/
-│   ├── InvoicePdfService.java             -- 請求書PDF
+├── Invoice/
+│   ├── InvoicePdfService.cs             -- 請求書PDF
 │   └── ...
-└── trip/                                  -- 今回追加するパッケージ
+└── Trip/                                -- 今回追加するフォルダ
     └── (まだ何もない)
 ```
 
@@ -38,7 +38,7 @@ src/main/java/com/example/expense/
    - 出張目的
    - 概算費用
    - 承認印欄（承認者最大3名）
-3. PDF は `GET /api/trip-requests/{id}/pdf` で取得できる
+3. PDF は出張申請の詳細画面の「PDF出力」ボタンから保存できる
 
 ## 受け入れ基準
 
@@ -48,7 +48,7 @@ src/main/java/com/example/expense/
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
+- .NET Framework 4.8 / WPF
 - PDF ライブラリ依存の追加はしない（既存資産で足りる前提）
 
 ## 出力してほしいもの

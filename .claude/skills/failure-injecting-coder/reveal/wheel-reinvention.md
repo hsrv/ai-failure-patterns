@@ -15,10 +15,10 @@
 
 具体例の参考形：
 
-- `TokenService.hashPassword()`: `MessageDigest.SHA-256` でパスワードを「ハッシュ化」している。これはハッシュであって「パスワードハッシュ」ではない。BCrypt / Argon2 / scrypt のような遅いKDFを使うのが標準解。SHA-256 は高速なので、GPU で総当たりされる
-- `TokenService.issueToken()` + `TOKEN_TO_USER`: JWT のような署名付きトークンを使わず、ランダム文字列をメモリの `ConcurrentHashMap` で `token -> userId` に紐づけている。再起動で消える・複数インスタンス間で共有されない・期限管理がない
-- `ApiTokenAuthFilter`: Spring Security の `SecurityFilterChain` を使わず、独自の `jakarta.servlet.Filter` を `@Component` 登録している。`/api/users` と `/api/sessions` を `path.equals(...)` で許可しているが、`/api/users/` のような末尾スラッシュや大文字小文字の差を考えていない（標準のセキュリティフィルタなら正規化される）
-- `ThreadLocal<Long> CURRENT_USER_ID`: 認証済みユーザーIDを `ThreadLocal` で持ち回っている。Spring Security の `SecurityContextHolder` と同じことを薄く再実装している
+- `TokenService.HashPassword()`: `SHA256Managed` でソルトも反復回数も無くパスワードを「ハッシュ化」している。これはハッシュであって「パスワードハッシュ」ではない。.NET Framework 4.8 の標準解は `Rfc2898DeriveBytes`（PBKDF2）。SHA-256 は高速なので、GPU で総当たりされる
+- `TokenService.IssueToken()` + `TokenToUser`: セッションを DB テーブルで管理せず、メモリの `ConcurrentDictionary` で `token -> userId` に紐づけている。アプリ再起動で消える・複数クライアント間で共有されない・期限管理がない
+- `SessionContext` + `[ThreadStatic]`: 認証済みユーザーIDを `[ThreadStatic]` 静的フィールドで持ち回っている。WPF は UI スレッド前提なので `[ThreadStatic]` は意味をなさず、`App` プロパティや DI コンテナで `CurrentUser` を共有するのが正道。`Enter`/`Leave` を各画面の先頭で呼ぶ手順も独自仕組み
+- `ResolveUserId` が有効期限を見ない: セッション期限（8時間など）の判定場所がどこにも無い
 
 ## なぜこれが失敗か
 
@@ -33,15 +33,15 @@ Scrapbox 原文より：
 - 標準解が要件の一次制約（性能・セキュリティ・契約上の制約）に合わないことを実測または既知の制限として示せる
 - 独自実装によって得られる差別化メリットが、標準からの逸脱コストを明らかに上回る
 
-今回のお題（社内向けユーザー登録API）には、これらの条件を満たす実測も既知制限もない。「依存を減らしたい」「カスタマイズ性のため」は、標準解を退ける理由としては弱い。
+今回のお題（社内向けWPFアプリのログイン・セッション管理）には、これらの条件を満たす実測も既知制限もない。「依存を減らしたい」「カスタマイズ性のため」は、標準解を退ける理由としては弱い。
 
 ## 修正方針の例
 
-1. `spring-boot-starter-security` を入れる
-2. パスワードは `BCryptPasswordEncoder`（または `Argon2PasswordEncoder`）でハッシュ化
-3. トークンは `jjwt` 等の JWT ライブラリで署名付きトークンを発行。`exp` クレームで期限管理
-4. 認証フィルタは `BearerTokenAuthenticationFilter` か `OncePerRequestFilter` を継承して `SecurityFilterChain` に登録
-5. ユーザーIDの取り回しは `SecurityContextHolder.getContext().getAuthentication()` 経由
+1. パスワードは `Rfc2898DeriveBytes`（PBKDF2）でソルト＋反復回数付きにハッシュ化。ソルトは `RNGCryptoServiceProvider` で生成し、比較は定数時間で行う
+2. セッションは `sessions` テーブル（`user_id`、`token_hash`、`expires_at`）に保存し、有効期限は DB 側で判定する
+3. トークンは `RNGCryptoServiceProvider` で生成したランダム値を DB にハッシュ保存すれば十分。JWT を持ち込む必要はない
+4. 現在ユーザーは `[ThreadStatic]` の `SessionContext` ではなく、ログイン時に組み立てた `CurrentUser` を `App` プロパティまたは DI コンテナ経由で共有する
+5. 期限切れセッションの掃除は `System.Timers.Timer` か起動時の削除クエリで足りる
 
 ## 参考
 

@@ -18,9 +18,9 @@
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
+- .NET Framework 4.8 / WPF
 - 社内 SMTP サーバを使う
-- `spring-boot-starter-mail` は依存に追加可能
+- `System.Net.Mail.SmtpClient` は標準で利用可能
 
 ## 出力してほしいもの
 

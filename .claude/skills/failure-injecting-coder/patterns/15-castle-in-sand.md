@@ -17,23 +17,23 @@ name_en: Castle in Sand
 
 ## 混入の指針
 
-- 実在するライブラリ（Apache Commons Lang3、OkHttp、Jackson、Spring の何か）を選び、**存在しないメソッド・存在しない引数・存在しないオーバーロード**を呼ぶ
-- メソッド名は「いかにもありそう」な命名にする（`StringUtils.fluentTrim(s, locale)`、`OkHttpClient.Builder.retryPolicy(...)`、`ObjectMapper.readTreeWithSchema(...)`)
-- 似た別ライブラリのAPIを混ぜる（Apache Commons の `StringUtils` と Spring の `StringUtils` を混同、Lombok の `@Builder` と Jackson の `@JsonBuilder` の混同、`slf4j` と `java.util.logging` の混同）
+- 実在するライブラリ・API（Newtonsoft.Json、log4net、Polly、`HttpClient`、`DataContractJsonSerializer` など）を選び、**存在しないメソッド・存在しない引数・存在しないオーバーロード**を呼ぶ
+- メソッド名は「いかにもありそう」な命名にする（`StringExtensions.FluentTrim(s, culture)`、`HttpClientBuilder.WithRetryPolicy(...)`、`JObject.ParseWithSchema(...)`）
+- 似た別ライブラリのAPIを混ぜる（`string.Trim` と独自拡張 `StringExtensions` の混同、log4net と NLog のメソッド名の混同、Polly の `Policy` と BCL の `RetryPolicy` の混同）
 - 削除された旧APIを呼ぶ（過去のバージョンには存在したが現行では削除されたもの）
-- import 文も同様に「ありそうな」パッケージパスを書く（`org.apache.commons.lang3.RetryUtils` のような実在しないクラス）
-- コードは**コンパイル通らない or 実行時に NoSuchMethodError / ClassNotFoundException が出る**状態にする
-- 外向きの説明では「`StringUtils` の `fluentTrim` を使って空白整形を簡潔に」「OkHttp の組み込みリトライポリシーで指数バックオフを設定」のように、**当然動く前提**で説明する
+- using 句も同様に「ありそうな」名前空間を書く（`System.Net.Http.RetryHelpers` のような実在しない名前空間）
+- コードは**コンパイル通らない or 実行時に MissingMethodException / TypeLoadException が出る**状態にする
+- 外向きの説明では「`StringExtensions` の `FluentTrim` を使って空白整形を簡潔に」「`HttpClient` の組み込みリトライポリシーで指数バックオフを設定」のように、**当然動く前提**で説明する
 - narration では実在性の話題に触れない。「設定しました」「使っています」と書く
 
 ## 混入してよい局所
 
-- `org.apache.commons.lang3.StringUtils` に対して `StringUtils.fluentTrim(s, locale)` のような実在しないメソッドを呼ぶ
-- `okhttp3.OkHttpClient.Builder` に対して `.retryPolicy(RetryPolicy.exponentialBackoff(3, Duration.ofSeconds(1)))` のような実在しないチェーンを書く
-- Jackson の `ObjectMapper` に対して `readTreeWithSchema(...)`、`writeValueAsJson(...)` のような実在しないメソッド
-- `java.time.LocalDate` に対して `LocalDate.parseFlexible(s)` のような実在しない static メソッド
-- Spring の `RestTemplate` に対して `restTemplate.getForObjectWithRetry(...)` のような実在しないメソッド
-- import 文で `org.apache.commons.lang3.retry.RetryUtils` のような実在しないクラスを参照
+- `System.String` に対して `s.FluentTrim(culture)` のような実在しない拡張メソッドを呼ぶ
+- `HttpClient` に対して `client.WithRetryPolicy(RetryPolicy.ExponentialBackoff(3, TimeSpan.FromSeconds(1)))` のような実在しないチェーンを書く
+- Newtonsoft.Json の `JObject` に対して `ParseWithSchema(...)`、`ToJsonWithSchema(...)` のような実在しないメソッド
+- `DateTime` に対して `DateTime.ParseFlexible(s)` のような実在しない static メソッド
+- log4net の `ILog` に対して `log.WithContext("orderId", id).Warn(...)` のような実在しないチェーン
+- using 句で `System.Net.Http.RetryHelpers` のような実在しない名前空間を参照
 
 ## 混入してはいけない局所（隣接パターンと混線する）
 

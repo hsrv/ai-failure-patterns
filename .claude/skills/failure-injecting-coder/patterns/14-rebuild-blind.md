@@ -19,20 +19,20 @@ name_en: Rebuild Blind
 
 - プロジェクト内に既存の共通ユーティリティ・ドメインクラスがある前提のお題を作る（`Money` クラス、共通日付ユーティリティ、共通バリデーション、Repository 規約など）
 - 受講者プロンプトでその存在をほのめかすが、AI 役は**それを読まずに**新規実装で同じ役割をローカルに書き直す
-- 既存と微妙に違う関数名にする（`formatDate` があるのに `dateToString`、`Money` があるのに `BigDecimal` 直接）
+- 既存と微妙に違う関数名にする（`FormatDate` があるのに `DateToString`、`Money` があるのに `decimal` 直接）
 - 外向きの説明では「シンプルに書きました」「依存を持ち込まず最小構成で」「ロジックを自己完結に」のような語彙を使う
 - コードは「動く」状態にする。`Money` クラスのような既存ドメインが存在する想定は、コメントで「既存にこういうクラスがある」と書いてから無視する形にすると見やすい
 - `wheel-reinvention` と区別するため、標準解（フレームワーク・標準ライブラリ）を退ける形にはしない。あくまで**プロジェクト内の既存実装**を読まないことが論点
 
 ## 混入してよい局所
 
-- 既存の `Money` クラスがあるのに、新規の集計ロジックを `BigDecimal` を直接扱う形で書く
-- 共通日付ユーティリティ `DateFormatter.formatIsoDate()` があるのに、新規画面で `dateToString()` をローカルに定義
-- 共通バリデーション `EmailValidator` があるのに、追加画面で `email.contains("@")` を直書き
-- Repository 規約があるのに、新規 Service の中で `JdbcTemplate` を直接使ってSQLを書く
-- 認可が `@PreAuthorize` で集約されているのに、新規 Controller で個別に `if (user.getRole() == ...)` を書く
-- 共通エラーレスポンス組み立て `ApiErrorResponse.of(...)` があるのに、新規Controllerでローカルに `Map.of("error", ...)` を返す
-- 集計の通貨換算ロジックが既存にあるのに、新規バッチで自前のレートテーブルを参照する
+- 既存の `Money` クラスがあるのに、新規の集計ロジックを `decimal` を直接扱う形で書く
+- 共通日付ユーティリティ `DateFormatter.FormatIsoDate()` があるのに、新規画面で `DateToString()` をローカルに定義
+- 共通バリデーション `EmailValidator` があるのに、追加画面で `email.Contains("@")` を直書き
+- Repository 規約があるのに、新規 ViewModel の中で `SqlConnection`/`SqlCommand` を直接使ってSQLを書く
+- 認可が共通の `AuthorizationPolicy` に集約されているのに、新規 ViewModel で個別に `if (user.Role == ...)` を書く
+- 共通エラー表示 `ErrorDialog.Show(...)` があるのに、新規画面でローカルに `MessageBox.Show(ex.Message)` を呼ぶ
+- 集計の通貨換算ロジックが既存にあるのに、新規取込処理で自前のレートテーブルを参照する
 
 ## 混入してはいけない局所（隣接パターンと混線する）
 
@@ -52,4 +52,4 @@ name_en: Rebuild Blind
 
 > 既存の関数・クラス・ユーティリティを読まずに似た役割のものを新規に作る。Addy Osmani の `Comprehension Debt`。
 >
-> 共通日付ユーティリティがあるのに `formatDate` / `dateToString` / `toIsoDate` が並列に増える、Repository 規約なのに新 Service 内で直接 SQL、共通バリデーション規則があるのに追加画面でローカル関数で書き直す、既存 `Money` クラスがあるのに `BigDecimal` を直接扱う。
+> 共通日付ユーティリティがあるのに `FormatDate` / `DateToString` / `ToIsoDate` が並列に増える、Repository 規約なのに新 ViewModel 内で直接 SQL、共通バリデーション規則があるのに追加画面でローカル関数で書き直す、既存 `Money` クラスがあるのに `decimal` を直接扱う。

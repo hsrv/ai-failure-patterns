@@ -26,12 +26,12 @@
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
-- データアクセスは MyBatis を採用済み（既存コードに合わせる）
+- .NET Framework 4.8 / WPF
+- データアクセスは Dapper を採用済み（既存コードに合わせる）
 - 1リクエストあたり 300ms 以内に応答したい
 - `inquiries` テーブルには `created_at` に既にインデックスがある
 
 ## 出力してほしいもの
 
-- 実装ファイル一式（コントローラ・サービス・Mapper・SQL）
+- 実装ファイル一式（View・ViewModel・サービス・Repository・SQL）
 - 受け入れ基準のうち「指定の優先順位通りに並ぶ」をカバーするテスト

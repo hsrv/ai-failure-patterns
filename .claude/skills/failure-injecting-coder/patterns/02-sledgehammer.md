@@ -21,21 +21,21 @@ name_en: Sledgehammer
 
 - 要件規模が「単一プロセス・少量データ・少人数運用」で十分なお題を選ぶ
 - そこに、分散システム・非同期メッセージング・イベントソーシング・ルールエンジン・コンテナオーケストレーション等の重量級構成を提案する
-- 構成図やコンポーネント名は「業界でよく見るベストプラクティス」っぽい語彙で揃える（Producer / Consumer Group / Event Store / Saga / Outbox / DLQ など）
+- 構成図やコンポーネント名は「業界でよく見るベストプラクティス」っぽい語彙で揃える（Publisher / Subscriber / Event Store / Saga / Outbox / Dead-letter キュー / Dataflow パイプライン など）
 - 外向きの説明では「スケーラビリティを確保するため」「将来の拡張に備えて」「疎結合のため」「再処理可能性のため」という、それ自体は理に適って聞こえる理由で押し通す
-- コードは「動く」状態にする。プロデューサー・コンシューマーの最小構成は実装する
-- `wheel-reinvention` と区別するため、標準解（Spring Batch、`@Scheduled`、`Spring Boot` の単発バッチ）が要件規模に見合うことを敢えて無視する形にする
+- コードは「動く」状態にする。送信側・受信側の最小構成は実装する
+- `wheel-reinvention` と区別するため、標準解（既存アプリ内の `Task.Run`、`System.Timers.Timer`、ADO.NET のパラメータ化クエリ）が要件規模に見合うことを敢えて無視する形にする
 
 ## 混入してよい局所
 
-- 日次少量CSV取込に Kafka + Consumer Group + Outbox パターン
-- 数十人規模の管理画面をマイクロサービスに分割（Auth / User / Notification / Audit）
+- 日次少量CSV取込に MSMQ + Outbox テーブル + 常駐 Windows サービス + TPL Dataflow
+- 数十人規模の社内アプリの中間層を複数 Windows サービスに分割（Auth / User / Notification / Audit）
 - 4状態しかない申請ワークフローに Event Sourcing + CQRS + Saga
-- 月次1回のバッチに Spark + Kubernetes CronJob
-- 1段階承認に Camunda / Activiti
-- 簡単な入力チェック（必須・桁数・範囲）に Drools / OPA
-- 数百件規模の検索に Elasticsearch + 全文インデックス
-- リクエスト数十/分のAPIに gRPC + Service Mesh + Sidecar
+- 月次1回の集計に SSIS パッケージ + 独自ジョブスケジューラ基盤
+- 1段階承認に WF（Windows Workflow Foundation）/ 独自ワークフローエンジン
+- 簡単な入力チェック（必須・桁数・範囲）に独自ルールエンジン / 外部 DSL
+- 数百件規模の検索に Lucene.NET + 全文インデックス
+- 数十回/日の画面操作に WCF サービス群 + MSMQ + SignalR 双方向通知
 
 ## 混入してはいけない局所（隣接パターンと混線する）
 
@@ -54,4 +54,4 @@ name_en: Sledgehammer
 
 > 要件規模に対して過剰な技術選定。
 >
-> AI は「業界でよく見るベストプラクティス」を文脈非依存に持ち込みやすい。30人規模の管理画面にマイクロサービス4分割、4状態しかないワークフローにイベントソーシング、日次500件のCSV取込に Kafka + Consumer Group のような構成は、要件規模を見ていないサインである。
+> AI は「業界でよく見るベストプラクティス」を文脈非依存に持ち込みやすい。30人規模の管理画面にサービス4分割、4状態しかないワークフローにイベントソーシング、日次500件のCSV取込に MSMQ + 常駐 Windows サービスのような構成は、要件規模を見ていないサインである。

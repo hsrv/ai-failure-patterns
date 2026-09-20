@@ -12,13 +12,13 @@
 
 ## 混入箇所
 
-このコードはコンパイルが通らない。あるいは仮に通っても実行時に `ClassNotFoundException` / `NoSuchMethodError` で落ちる。
+このコードはコンパイルが通らない。あるいは仮に通っても実行時に `MissingMethodException` / `TypeLoadException` で落ちる。
 
-- `import okhttp3.RetryPolicy;`: OkHttp の公開APIに `okhttp3.RetryPolicy` というクラスは存在しない。OkHttp はビルトインのリトライAPIを持たない設計で、Interceptor で自前実装するか別ライブラリ（Resilience4j など）を併用するのが正攻法
-- `OkHttpClient.Builder.retryPolicy(...)`: 同上。Builder にこのメソッドは無い。実在するのは `connectTimeout` / `readTimeout` / `addInterceptor` など
-- `import org.apache.commons.lang3.retry.RetryUtils;`: Apache Commons Lang3 に `retry` パッケージは存在しない。`RetryUtils` というクラスも無い。リトライ系は Commons Lang3 のスコープ外
-- `mapper.readTreeWithSchema(byte[], String)`: Jackson の `ObjectMapper` にこのオーバーロードは存在しない。実在するのは `readTree(byte[])` / `readTree(String)` / `readTree(InputStream)` など。"スキーマ" を指定して読む API は別物（JSON Schema 検証は別ライブラリ）
-- `StringUtils.fluentTrim(String, Locale)`: Apache Commons Lang3 の `StringUtils` にこのメソッドは無い。実在するのは `strip(str, stripChars)` / `stripStart` / `stripEnd` / `trim` 等。ロケール対応の空白除去という機能自体が無い
+- `new HttpClientBuilder().WithTimeout(...).WithRetryPolicy(...).Build()`: .NET Framework 4.8 に `HttpClientBuilder` は存在しない（`Microsoft.Extensions.Http` の `IHttpClientFactory` 系は .NET Core 系の話）。実在するのは `new HttpClient { Timeout = ... }`
+- `RetryPolicy.ExponentialBackoff(3, TimeSpan.FromSeconds(1))`: BCL に `RetryPolicy` という型は無い。Polly なら `Policy.Handle<>().WaitAndRetryAsync` が実在するが、このシグネチャではない
+- `RetryHelper.WithRetry(3, async () => ...)`: `System.Net.Http` に `RetryHelper` というクラスは存在しない。BCL にリトライ系ユーティリティは無い
+- `JObject.ParseWithSchema(body, "default")`: Newtonsoft.Json の `JObject` にこのメソッドは存在しない。実在するのは `Parse` / `Load`。"スキーマ" を指定して読む API は別物（JSON Schema 検証は別ライブラリ）
+- `StringExtensions.FluentTrim(raw, culture)`: BCL に `StringExtensions` クラスも `FluentTrim` も存在しない。実在するのは `Trim` / `TrimStart` / `TrimEnd` / 引数を取る `Trim(char[])`
 
 外向きの説明は「指数バックオフリトライ」「ロケール対応空白除去」のような、それ自体は理に適った要件を、いかにもありそうな API 名で実現したことにしてしまっている。
 
@@ -38,7 +38,7 @@ Scrapbox 原文より：
 - **車輪の再発明 (wheel-reinvention)**: 標準解（ライブラリ）を退けて、自前で実装する
 - **隣を見ない再実装 (rebuild-blind)**: 既存のプロジェクト内ユーティリティを読まずに似たものを作る
 
-「リトライ機構が欲しい」場面で、自前 `for` ループで書くなら `wheel-reinvention`、`OkHttpClient.Builder.retryPolicy(...)` を幻視するなら `castle-in-sand`、既存の `com.example.common.RetryHelper` を読まずに別の `Retrier` クラスを作るなら `rebuild-blind`。同じ機能要件でも、どこを取り違えたかで別パターンになる。
+「リトライ機構が欲しい」場面で、自前 `for` ループで書くなら `wheel-reinvention`、`HttpClientBuilder.WithRetryPolicy(...)` を幻視するなら `castle-in-sand`、既存の `Example.Common.RetryHelper` を読まずに別の `Retrier` クラスを作るなら `rebuild-blind`。同じ機能要件でも、どこを取り違えたかで別パターンになる。
 
 ## 敢えて選ぶときの条件
 
@@ -46,24 +46,32 @@ Scrapbox 原文より：
 
 ## 修正方針の例
 
-1. OkHttp のリトライは Interceptor で自前実装するか、Resilience4j を併用する
-2. リトライ全体のラッパは自前 `for` ループ（または Spring Retry の `@Retryable`）
-3. JSON パースは `ObjectMapper.readTree(byte[])` を使う
-4. 空白除去は Apache Commons Lang3 の `StringUtils.strip(raw, " \t\r\n　")` で stripChars を指定する。全角スペース `　` を明示的に含める
+1. リトライは Polly（`Policy.Handle<HttpRequestException>().WaitAndRetryAsync`）を使うか、自前の `for` ループで書く
+2. `HttpClient` は `new HttpClient { Timeout = ... }` で直接作る（.NET 4.8 にビルダーは無い）
+3. JSON パースは `JObject.Parse(string)` を使う
+4. 空白除去は `raw.Trim()` か、`raw.Trim(new[] { ' ', '\t', '\r', '\n', '　' })` で全角スペースを明示的に含める
 
-```java
-public String fetchTitle(String url) throws IOException, InterruptedException {
-    for (int attempt = 1; attempt <= 3; attempt++) {
-        try (Response r = client.newCall(new Request.Builder().url(url).build()).execute()) {
-            if (!r.isSuccessful()) throw new IOException("HTTP " + r.code());
-            JsonNode root = mapper.readTree(r.body().bytes());
-            return StringUtils.strip(root.path("title").asText(""), " \t\r\n　");
-        } catch (IOException e) {
-            if (attempt == 3) throw e;
-            Thread.sleep(1000L * (1L << (attempt - 1)));
+```csharp
+public async Task<string> FetchTitleAsync(string url)
+{
+    for (int attempt = 1; attempt <= 3; attempt++)
+    {
+        try
+        {
+            var response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            string body = await response.Content.ReadAsStringAsync();
+            var root = JObject.Parse(body);
+            string raw = root.Value<string>("title") ?? "";
+            return raw.Trim(new[] { ' ', '\t', '\r', '\n', '　' });
+        }
+        catch (HttpRequestException)
+        {
+            if (attempt == 3) throw;
+            await Task.Delay(TimeSpan.FromSeconds(1 << (attempt - 1)));
         }
     }
-    throw new IllegalStateException("unreachable");
+    throw new InvalidOperationException("unreachable");
 }
 ```
 

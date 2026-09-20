@@ -50,8 +50,8 @@ Response:
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
-- HTTP クライアントは RestClient を使う
+- .NET Framework 4.8（コンソールアプリをタスクスケジューラで日次起動）
+- HTTP クライアントは HttpClient を使う
 
 ## 出力してほしいもの
 

@@ -26,7 +26,7 @@
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
+- ASP.NET Web API 2 / .NET Framework 4.8
 - 開発期間は3ヶ月、エンジニア2名
 - インフラ予算は月額10万円以内
 - AWS を使う方針

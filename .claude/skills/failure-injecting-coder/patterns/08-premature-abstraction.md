@@ -30,9 +30,9 @@ name_en: Premature Abstraction
 - 計算ロジック1種類しかないところに Strategy パターン
 - 画面1つしかないところに汎用フォームレンダラ
 - 検索条件2つしかないところに独自 DSL（条件オブジェクトの組み立て層）
-- 通知が email 1種類しかないところに `NotificationStrategy` インタフェース
+- 通知が email 1種類しかないところに `INotificationStrategy` インタフェース
 - 1ファイル形式しか取り込まないところに汎用 CSV インポート基盤
-- ファイル保存先がローカルだけなのに `StorageProvider` インタフェース＋実装1個
+- ファイル保存先がローカルだけなのに `IStorageProvider` インタフェース＋実装1個
 
 ## 混入してはいけない局所（隣接パターンと混線する）
 

@@ -13,13 +13,13 @@
 
 ## 混入箇所
 
-- `NotificationChannelType` enum: `EMAIL` 以外に `SMS` / `LINE` / `PUSH` の値が並んでいるが、実装は EMAIL の1つしか無い。将来追加される「かもしれない」種別を先取りで列挙している
-- `Notification` 値オブジェクト: `subject` / `recipient` / `body` を持つ汎用形になっている。`subject` は「SMS や LINE では使わないかも」というコメント付きで、将来の差異を現時点に先取りしている
-- `NotificationChannel` インタフェース + `EmailNotificationChannel` 実装1つ: Strategy パターンの形になっているが、Strategy が1つしかない
-- `NotificationRouter`: 起動時に全 `NotificationChannel` を集めて `channelType -> channel` のマップを作る Router 層。現在は EMAIL 1つしか入らない
-- `NotificationService` ファサード: `sendRegistrationEmail()` は単に EMAIL の `Notification` を作って Router に流すだけの薄いラッパ
+- `NotificationChannelType` enum: `Email` 以外に `Sms` / `Line` / `Push` の値が並んでいるが、実装は Email の1つしか無い。将来追加される「かもしれない」種別を先取りで列挙している
+- `Notification` 値オブジェクト: `Subject` / `Recipient` / `Body` を持つ汎用形になっている。`Subject` は「Sms や Line では使わないかも」というコメント付きで、将来の差異を現時点に先取りしている
+- `INotificationChannel` インタフェース + `EmailNotificationChannel` 実装1つ: Strategy パターンの形になっているが、Strategy が1つしかない
+- `NotificationRouter`: 起動時に全 `INotificationChannel` を集めて `Supports -> channel` の Dictionary を作る Router 層。現在は Email 1つしか入らない
+- `NotificationService` ファサード: `SendRegistrationEmail()` は単に Email の `Notification` を作って Router に流すだけの薄いラッパ
 
-要件は「ユーザー登録完了時に確認メールを送る」だけ。`JavaMailSender.send(SimpleMailMessage)` を1回呼ぶ Service で足りる。
+要件は「ユーザー登録完了時に確認メールを送る」だけ。`SmtpClient.Send(MailMessage)` を1回呼ぶ Service で足りる。
 
 外向きの説明で「将来 SMS や LINE にも送る可能性を考えて」「将来別の通知手段が来ても対応コストは新規チャネル実装1つ」と**口頭で将来変化を明示的に語っている**。だが「いつ・誰が・なんの便益のために」が紐づいていない。
 
@@ -33,7 +33,7 @@ Scrapbox 原文より：
 
 `時間効果(長期)` を過大評価して、`時間効果(短期)` を過小評価している。今回の話で言えば、SMS や LINE が必要になるかどうかは現時点では仮定でしかない。仮に必要になっても、その時点で具体的な要件（リトライ戦略・到達確認・コンプライアンス要件）が分かってから抽象化するほうが、要件と合った抽象化になる。
 
-加えて、`subject` フィールドのように「チャネルごとに使う／使わない」の差異を**現在の値オブジェクトに先取り**しているため、SMS が来たときに「SMS では subject が無いのにフィールドだけ残る」という形で残り続ける。想像で作った抽象化が、想像と違う将来要件にぶつかる。
+加えて、`Subject` フィールドのように「チャネルごとに使う／使わない」の差異を**現在の値オブジェクトに先取り**しているため、SMS が来たときに「SMS では Subject が無いのにフィールドだけ残る」という形で残り続ける。想像で作った抽象化が、想像と違う将来要件にぶつかる。
 
 ## 隣接パターンとの違い
 
@@ -56,25 +56,29 @@ Scrapbox 原文より：
 
 ## 修正方針の例
 
-1. `JavaMailSender` に直接依存する `NotificationService` を1クラス作る
-2. `sendRegistrationEmail(to, subject, body)` メソッド1つだけ
+1. `SmtpClient` に直接依存する `NotificationService` を1クラス作る
+2. `SendRegistrationEmail(to, subject, body)` メソッド1つだけ
 3. SMS や LINE が**コミットされた予定**になった時点で、そのときの具体要件（リトライ・到達確認・送信元番号管理・サードパーティ契約条件）を見てから抽象化する
 
-```java
-@Service
-public class NotificationService {
-    private final JavaMailSender mailSender;
+```csharp
+public class NotificationService
+{
+    private readonly SmtpClient smtpClient;
 
-    public NotificationService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    public NotificationService(SmtpClient smtpClient)
+    {
+        this.smtpClient = smtpClient;
     }
 
-    public void sendRegistrationEmail(String to, String subject, String body) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
-        mailSender.send(message);
+    public void SendRegistrationEmail(string to, string subject, string body)
+    {
+        using (var message = new MailMessage())
+        {
+            message.To.Add(to);
+            message.Subject = subject;
+            message.Body = body;
+            smtpClient.Send(message);
+        }
     }
 }
 ```

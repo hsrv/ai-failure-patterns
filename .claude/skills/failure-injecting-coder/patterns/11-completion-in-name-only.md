@@ -18,19 +18,19 @@ name_en: Completion in Name Only
 ## 混入の指針
 
 - お題は「単一クラス＋テストコード」程度の小さな単位を選ぶ（バリデーション・計算ロジック・パース処理など）
-- テストメソッド名は「それっぽい完了条件」を写し取った形にする（`test_validates_correctly`、`shouldReturnExpectedResult`、`handlesErrorCase`）
-- アサーションは `assertNotNull(result)` `assertTrue(result != null)` `assertEquals(true, ...)` のような中身を見ないチェックだけ
+- テストメソッド名は「それっぽい完了条件」を写し取った形にする（`Test_Validates_Correctly`、`ShouldReturnExpectedResult`、`HandlesErrorCase`）
+- アサーションは `Assert.IsNotNull(result)` `Assert.IsTrue(result != null)` `Assert.AreEqual(true, ...)` のような中身を見ないチェックだけ
 - ハッピーパスは通すが、境界値・異常系・業務上の禁則は検証しない
 - 外向きの説明では「ハッピーパスを通すテストを書きました。エラーケースは適宜追加してください」「主要なケースをカバーしています」のような語彙を使う
 - テストの「数」だけは揃える（5〜6個並ぶ）。中身は薄い
 
 ## 混入してよい局所
 
-- 入力バリデーションを実装し、`@Test public void test_validates_correctly()` で `assertNotNull(validator.validate(input))` だけする
-- 計算ロジックを実装し、`@Test public void test_calculates_amount()` で `assertTrue(result.compareTo(BigDecimal.ZERO) >= 0)` だけする
-- パース処理で「不正な入力でエラー」と書きながら、`assertThrows(Exception.class, ...)` で例外の型・メッセージ・条件を確認しない
+- 入力バリデーションを実装し、`[TestMethod] public void Test_Validates_Correctly()` で `Assert.IsNotNull(validator)` だけする
+- 計算ロジックを実装し、`[TestMethod] public void Test_Calculates_Amount()` で `Assert.IsTrue(result >= 0m)` だけする
+- パース処理で「不正な入力でエラー」と書きながら、`Assert.ThrowsException<Exception>(...)` で例外の型・メッセージ・条件を確認しない
 - 状態遷移ロジックで「正しい順序で遷移」と書きながら、遷移後の状態を取り出して検証しない
-- リポジトリ呼び出しで `verify(repo).save(any())` のように `any()` で押し通す
+- リポジトリ呼び出しで `mockRepo.Verify(r => r.Save(It.IsAny<Order>()))` のように `It.IsAny()` で押し通す
 
 ## 混入してはいけない局所（隣接パターンと混線する）
 

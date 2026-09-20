@@ -25,13 +25,13 @@ name_en: Wheel Reinvention
 
 ## 混入してよい局所
 
-- 認証トークンの自作（JWT があるのに独自フォーマット）
-- 認可ロジックの自作（Spring Security があるのに Filter+ThreadLocal）
-- スケジューラの自作（`@Scheduled` / Quartz があるのに `Thread`+`while(true)`+`sleep`）
-- HTTP レスポンス設計の自作（HTTP ステータスを使わず全部 200 で独自エラーコード）
-- リトライの自作（Spring Retry / Resilience4j があるのに自前の for ループ）
+- 認証トークン・パスワードハッシュの自作（`Rfc2898DeriveBytes`(PBKDF2) や `RNGCryptoServiceProvider` があるのに SHA-256 単発や独自フォーマット）
+- ログイン中ユーザーの共有の自作（`App.Current`・DI コンテナがあるのに `[ThreadStatic]` コンテキスト）
+- スケジューラの自作（`System.Timers.Timer` / `DispatcherTimer` / タスクスケジューラ / Quartz.NET があるのに `Thread`+`while(true)`+`Sleep`）
+- エラー通知設計の自作（共通エラーハンドラ・`TraceSource`・log4net があるのに独自エラーコードと独自ログ書き込み）
+- リトライの自作（Polly があるのに自前の for ループ）
 - DB制約で表せるものをアプリ側 if 文に押し込む
-- 設定値の暗号化の自作（Jasypt があるのに XOR や Base64 を「暗号化」と称する）
+- 接続文字列・設定値の暗号化の自作（`ProtectedData` / `ConfigurationManager` の接続文字列保護があるのに XOR や Base64 を「暗号化」と称する）
 
 ## 混入してはいけない局所（隣接パターンと混線する）
 

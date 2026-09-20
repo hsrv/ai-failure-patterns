@@ -12,11 +12,11 @@
 
 ## 混入箇所
 
-- `sendReplenishment()` の判定: `res.getStatusCode().is2xxSuccessful()` を「業務的に受理された」と等価扱いしている。プロンプトの API スペックでは業務エラー時も `{ "accepted": false, "reason": "..." }` を HTTP 2xx で返すので、業務エラーが「SUCCESS」として記録される
-- `SupplierResponse` を `toEntity` で受けているのにレスポンスボディの `accepted` フラグを読まない。`accepted=false` を「業務エラー」として扱う経路が存在しない
+- `SendReplenishmentAsync()` の判定: `res.IsSuccessStatusCode` を「業務的に受理された」と等価扱いしている。プロンプトの API スペックでは業務エラー時も `{ "accepted": false, "reason": "..." }` を HTTP 2xx で返すので、業務エラーが「SUCCESS」として記録される
+- `SupplierResponse` クラスは定義されているのに、`res.Content` を読まず `Accepted` フラグを確認しない。`accepted=false` を「業務エラー」として扱う経路が存在しない
 - `replenishment_log` の `SUCCESS` の意味: HTTP 受信成功というだけで、相手の受注システムに登録されているかは保証しない。後から「先月の補充実績」を集計しても、相手側の実績と一致しない可能性がある
-- 対象 0 件のときの挙動: `targets` が空でも `log.info("在庫補充バッチ完了: 成功 0 件 / 失敗 0 件")` で正常終了する。閾値設定ミス・商品マスタ消失・スキーマ移行漏れなどで対象 0 件になっても、「正常な業務日」と区別できない
-- 通知経路の欠如: 「失敗は朝のうちに管理者が気づける状態にしてほしい」という要求に対し、ログ出力のみで完結している。管理者が能動的にログを見ない限り気づけない（メール・Slack 等の push 通知が無い）
+- 対象 0 件のときの挙動: `targets` が空でも `log.TraceInformation("在庫補充送信 完了: 成功 0 件 / 失敗 0 件")` で正常終了する。閾値設定ミス・商品マスタ消失・スキーマ移行漏れなどで対象 0 件になっても、「正常な業務日」と区別できない
+- 通知経路の欠如: 「失敗は朝のうちに管理者が気づける状態にしてほしい」という要求に対し、ログ出力のみで完結している。管理者が能動的にログを見ない限り気づけない（メール等の push 通知が無い）
 
 ## なぜこれが失敗か
 
@@ -24,7 +24,7 @@ Scrapbox 原文より：
 
 > `コマンドが通った` `テストが緑になった` `200が返った` を、目的が達成されたことと混同する。"execution hallucination"。
 >
-> `200 OK`なので「動いた」と判断するが副作用が発生していない、INSERT が暗黙に弾かれていても「保存できた」、外部API送信成功だが相手側で受理されていない、バッチ完走だが対象0件、`console.log`だけで「ログ出力対応済み」、マイグレーション完了だがテーブル存在せずスキップ。
+> `200 OK`なので「動いた」と判断するが副作用が発生していない、INSERT が暗黙に弾かれていても「保存できた」、外部API送信成功だが相手側で受理されていない、取込処理完走だが対象0件、`Trace.WriteLine`だけで「ログ出力対応済み」、マイグレーション完了だがテーブル存在せずスキップ。
 
 「HTTP 2xx が返った」は通信プロトコルの成功であって、業務目的の成功ではない。今回のお題では、取引先 API が業務エラーも 2xx で返すスペックなので、HTTP ステータスだけで判定すると業務エラーが完全に隠蔽される。さらに対象 0 件の朝（業務的に異常を疑うべき状況）も「成功 0 件 / 失敗 0 件」で平坦化されてしまう。
 
@@ -46,20 +46,28 @@ Scrapbox 原文より：
 
 ## 修正方針の例
 
-```java
-private ReplenishmentResult send(Product p) {
-    try {
-        ResponseEntity<SupplierResponse> res = restClient.post()
-                .uri("/api/replenishment")
-                .body(new SupplierRequest(p.id(), p.replenishmentQuantity()))
-                .retrieve()
-                .toEntity(SupplierResponse.class);
-        SupplierResponse body = res.getBody();
-        if (body == null) return ReplenishmentResult.error("response body is null");
-        if (body.accepted()) return ReplenishmentResult.accepted(body.supplierOrderId());
-        return ReplenishmentResult.rejected(body.reason());
-    } catch (RestClientException e) {
-        return ReplenishmentResult.error(e.getMessage());
+```csharp
+private async Task<ReplenishmentResult> SendAsync(Product p)
+{
+    try
+    {
+        var res = await http.PostAsync("/api/replenishment",
+                new StringContent(JsonConvert.SerializeObject(
+                        new SupplierRequest { ProductId = p.Id, Quantity = p.ReplenishmentQuantity }),
+                        Encoding.UTF8, "application/json"));
+        if (!res.IsSuccessStatusCode)
+        {
+            return ReplenishmentResult.Error("HTTP " + (int)res.StatusCode);
+        }
+        var body = JsonConvert.DeserializeObject<SupplierResponse>(
+                await res.Content.ReadAsStringAsync());
+        if (body == null) return ReplenishmentResult.Error("response body is null");
+        if (body.Accepted) return ReplenishmentResult.Accepted(body.SupplierOrderId);
+        return ReplenishmentResult.Rejected(body.Reason);
+    }
+    catch (HttpRequestException e)
+    {
+        return ReplenishmentResult.Error(e.Message);
     }
 }
 ```
@@ -67,7 +75,7 @@ private ReplenishmentResult send(Product p) {
 加えて：
 
 1. 対象 0 件は警告通知を出す（業務的に異常の可能性があるため）
-2. 業務エラー・通信エラーは件数が 1 件以上で管理者にメール/Slack 通知（プロンプトの「朝のうちに気づける」要件を満たす）
+2. 業務エラー・通信エラーは件数が 1 件以上で管理者にメール通知（プロンプトの「朝のうちに気づける」要件を満たす）
 3. `replenishment_log` の状態は `ACCEPTED` / `REJECTED` / `ERROR` の 3 種で記録し、後から集計したときに業務実態と一致するようにする
 
 ## 参考

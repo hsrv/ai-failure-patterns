@@ -32,7 +32,7 @@ Response: 200
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
+- ASP.NET Web API 2 / .NET Framework 4.8
 - 3つのフロントエンドは同じリポジトリ内にあり、修正可能
 - 営業部門から「これまで通り全件表示も使う」という要望
 

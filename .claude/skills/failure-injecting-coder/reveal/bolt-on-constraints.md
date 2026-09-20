@@ -12,11 +12,11 @@
 
 ## 混入箇所
 
-- `EmployeeService.update(Long id, UpdateEmployeeRequest req)`: 引数に「誰が操作しているか」が無い。`@AuthenticationPrincipal User` を Controller で受け取って Service に渡す経路が無いので、権限チェックを差し込む場所もない
-- `Employee.apply(req)`: 受け取ったリクエストをそのまま反映している。「自分自身を編集しているのか」「他部署の社員を編集しているのか」を判定する制約が無い
+- `EmployeeService.Update(long id, UpdateEmployeeInput input)`: 引数に「誰が操作しているか」が無い。ViewModel から操作者を受け取って Service に渡す経路が無いので、権限チェックを差し込む場所もない
+- `Employee.Apply(input)`: 受け取った入力をそのまま反映している。「自分自身を編集しているのか」「他部署の社員を編集しているのか」を判定する制約が無い
 - 変更前の値を記録する `EmployeeHistory` 相当のエンティティが無い。社員マスタの「氏名・部署・役職」は人事制度・労務観点で変更履歴の保管が要件として強い領域だが、その制約がデータモデルに織り込まれていない
-- `Employee` に `@Version` による楽観ロックがない。同時編集で後勝ちになる
-- `updatedAt` / `updatedBy` がエンティティに無い。誰がいつ更新したかを後から追えない
+- `Employee` に `RowVersion`（`byte[]` + `[Timestamp]`）による楽観ロックがない。同時編集で後勝ちになる
+- `UpdatedAt` / `UpdatedBy` がエンティティに無い。誰がいつ更新したかを後から追えない
 
 外向きには「まず基本機能を作り、付帯機能は必要に応じて追加していく」と書いたが、社員マスタの場合は **権限・履歴・監査** が「付帯機能」ではなく **本体の制約** に当たる。
 
@@ -41,25 +41,31 @@ Scrapbox 原文より：
 
 ## 修正方針の例
 
-データモデルに `EmployeeHistory` を加える。`Employee` に楽観ロックと `updatedAt` / `updatedBy` を入れる。Service の更新メソッドは：
+データモデルに `EmployeeHistory` を加える。`Employee` に `RowVersion` と `UpdatedAt` / `UpdatedBy` を入れる。Service の更新メソッドは：
 
-```java
-@Transactional
-@PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
-public Employee update(Long employeeId, UpdateEmployeeCommand cmd, User operator) {
-    Employee current = employeeRepo.findById(employeeId).orElseThrow(...);
-
-    if (!authPolicy.canUpdate(operator, current, cmd)) {
-        throw new AccessDeniedException("操作対象に対する権限がありません");
+```csharp
+public Employee Update(long employeeId, UpdateEmployeeInput input, User operatorUser)
+{
+    var current = db.Employees.Find(employeeId);
+    if (current == null)
+    {
+        throw new InvalidOperationException("社員が見つかりません");
     }
 
-    historyRepo.save(EmployeeHistory.of(current, operator.id(), cmd.reason(), now()));
-    current.applyChanges(cmd, operator.id());
+    if (!authPolicy.CanUpdate(operatorUser, current, input))
+    {
+        throw new UnauthorizedAccessException("操作対象に対する権限がありません");
+    }
+
+    db.EmployeeHistories.Add(
+        EmployeeHistory.Of(current, operatorUser.Id, input.Reason, DateTime.Now));
+    current.Apply(input, operatorUser.Id);
+    db.SaveChanges(); // 履歴と本体を同一トランザクションで保存
     return current;
 }
 ```
 
-ポイントは「`update()` を呼ぶときに `operator` が必須」になること。シグネチャ上、認証済みユーザーを渡さないと呼べないようにする。
+ポイントは「`Update()` を呼ぶときに `operatorUser` が必須」になること。シグネチャ上、認証済みユーザーを渡さないと呼べないようにする。
 
 ## 参考
 

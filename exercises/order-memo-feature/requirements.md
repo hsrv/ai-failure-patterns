@@ -8,12 +8,12 @@
 
 ### 開発標準（抜粋）
 
-- **トランザクション境界**: Service 層で `@Transactional` を宣言する。Controller では宣言しない
-- **例外設計**: 業務エラーはチェック例外 `BusinessException` を継承して定義し、サービス層で throw する。ランタイム例外はシステム不具合扱い
-- **ロギング**: ログ出力は共通の `AuditLogger` を使う。`Logger#info` 等の直接呼び出しはしない
-- **日時**: 日時の取り扱いは社内ユーティリティ `SystemClock`（`SystemClock.now()` で `LocalDateTime` を返す）を使う。テスト時は `SystemClock.freeze(...)` で固定できる
-- **DTO 命名**: リクエストは `*Form`、レスポンスは `*View`、サービス間 DTO は `*Dto`
-- **永続化**: JPA を使う。Entity は `*Entity`、Repository は `Spring Data JPA` の `JpaRepository` を継承
+- **トランザクション境界**: Service 層で `TransactionScope` を開く。ViewModel／コードビハインドでは開かない
+- **例外設計**: 業務エラーは `BusinessException` を継承して定義し、サービス層で throw する。それ以外の例外はシステム不具合扱い
+- **ロギング**: ログ出力は共通の `AuditLogger` を使う。`log.Info` 等の直接呼び出しはしない
+- **日時**: 日時の取り扱いは社内ユーティリティ `SystemClock`（`SystemClock.Now()` で `DateTime` を返す）を使う。テスト時は `SystemClock.Freeze(...)` で固定できる
+- **命名**: 画面バインド用は `*ViewModel`、画面への入力は `*Input`、サービス間 DTO は `*Dto`
+- **永続化**: Entity Framework 6 を使う。Entity は `*Entity`、`DbContext` は `AppDbContext` に集約し、Repository 経由でアクセスする
 
 ## 要求
 
@@ -30,7 +30,7 @@
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
+- .NET Framework 4.8 / WPF
 - 上記の開発標準に従うこと
 - 既存の `OrderEntity`, `OrderRepository`, `OrderService` がすでにある
 

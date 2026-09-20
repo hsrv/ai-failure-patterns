@@ -13,11 +13,11 @@
 
 ## 混入箇所
 
-- `TaxRateStrategy` インタフェースと `StandardTaxRateStrategy` 実装クラス: 実装が標準税率1種類しかない段階で Strategy パターンを導入している
+- `ITaxRateStrategy` インタフェースと `StandardTaxRateStrategy` 実装クラス: 実装が標準税率1種類しかない段階で Strategy パターンを導入している
 - `TaxRateStrategyFactory`: 現状は `"STANDARD"` しか返さないファクトリ。「将来 REDUCED, EXEMPT を追加する想定」と書かれているが、その変化点は一度も観測されていない
-- `TaxCalculationService.calculate(amount, taxCode)`: 受講者の要件は「税率10%で計算する」だけなのに、税率コードを引数で受け取るシグネチャに膨らんでいる
+- `TaxCalculationService.Calculate(amountExcludingTax, taxCode)`: 受講者の要件は「税率10%で計算する」だけなのに、税率コードを引数で受け取るシグネチャに膨らんでいる
 
-要件は `BigDecimal -> BigDecimal` の関数1つで足りる。
+要件は `decimal -> decimal` の関数1つで足りる。
 
 ## なぜこれが失敗か
 
@@ -43,13 +43,15 @@ Scrapbox 原文より：
 
 ## 修正方針の例
 
-```java
-public final class TaxCalculator {
-    private static final BigDecimal RATE = new BigDecimal("0.10");
-    private TaxCalculator() {}
+```csharp
+public static class TaxCalculator
+{
+    private const decimal Rate = 0.10m;
 
-    public static BigDecimal calculate(BigDecimal amountExcludingTax) {
-        return amountExcludingTax.multiply(RATE).setScale(0, RoundingMode.HALF_UP);
+    public static decimal Calculate(decimal amountExcludingTax)
+    {
+        return Math.Round(amountExcludingTax * Rate, 0,
+                MidpointRounding.AwayFromZero);
     }
 }
 ```

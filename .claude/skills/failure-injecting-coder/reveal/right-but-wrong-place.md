@@ -12,22 +12,22 @@
 
 ## 混入箇所
 
-prompt.md に既存規約4点（例外設計・日付ユーティリティ・トランザクション境界・ログレベル方針）が明記されているにもかかわらず、新規コードはそのいずれにも従っていない。
+prompt.md に既存規約4点（例外設計・日付ユーティリティ・DB 更新境界・ログレベル方針）が明記されているにもかかわらず、新規コードはそのいずれにも従っていない。
 
-- 例外: prompt の「業務例外は `BusinessException`（チェック例外）」を無視して、`IllegalArgumentException` と `RuntimeException` で投げている。`@ExceptionHandler` の既存ハンドラに到達しないので、ユーザー向けエラーレスポンスに変換されない
-- 日付: prompt の「`DateUtil` を使う。`java.time` 直接禁止」を無視して、`DateTimeFormatter.ofPattern("yyyy-MM-dd")` を新規定義し、`ChronoUnit.DAYS.between(...)` を直接呼んでいる。`DateUtil` で集約していたフォーマット文字列・タイムゾーン・営業日計算ロジックを通らない
-- トランザクション: prompt の「`@Transactional` は Service 層」を無視して、Controller のメソッドに `@Transactional` を付けている。既存の Service `@Transactional` 規約と混在して、トランザクション境界が2層に分かれる
-- ログ: prompt の「業務エラーは `warn`/`error`」を無視して、残日数不足（業務エラー）まで `info` で出している。`info` 以上を監視している運用なら、業務エラーが流れ込んで意味が薄まる
+- 例外: prompt の「業務例外は `BusinessException`」を無視して、`ArgumentException` と `InvalidOperationException` で投げている。`BusinessException` を `catch` してユーザー向けメッセージに変換する共通ハンドラに到達しないので、業務エラーが未処理例外として残る
+- 日付: prompt の「`DateUtil` を使う。`DateTime` 標準 API 直接禁止」を無視して、`EndDate.Subtract(StartDate).Days + 1` と `ToString("yyyy-MM-dd")` を直接書いている。`DateUtil` で集約していたフォーマット文字列・タイムゾーン・営業日計算ロジックを通らない
+- DB 更新: prompt の「`SaveChanges` は Service 層」を無視して、ViewModel の `Register()` から `db.SaveChanges()` を直接呼んでいる。既存の Service 層更新規約と混在して、DB 更新の境界が2層に分かれる
+- ログ: prompt の「業務エラーは `Warn`/`Error`」を無視して、残日数不足（業務エラー）まで `log.Info` で出している。`Warn` 以上だけを監視している運用なら、この業務エラーは通知されない
 
 ## なぜこれが失敗か
 
 Scrapbox 原文より：
 
-> 既存コードはチェック例外を業務例外として使い分けているのに、新規コードだけ`RuntimeException`に統一する。日付処理に既存の独自ユーティリティを使う規約なのに、`java.time` を直接呼んで書く。
+> 既存コードは専用の業務例外を使い分けているのに、新規コードだけ標準例外に統一する。日付処理に既存の独自ユーティリティを使う規約なのに、`DateTime` の標準 API を直接呼んで書く。
 >
 > これはAIが「一般的Web開発」の知識で空白を埋めることで生まれる。プロジェクトの既存コードを読みに行く動作をAIに強制しない限り、減らない。
 
-「一般論としてはどれもそれっぽい正論」なのが厄介。Java の一般的なベストプラクティスとしては「`RuntimeException` で統一」「`java.time` をそのまま使う」「`@Transactional` の場所はチームで決める」のいずれも肯定派の言説がある。だがプロジェクトには既に判断が下されていて、規約として明文化されている。そこに「一般論」を持ち込むのは整合性を壊す。
+「一般論としてはどれもそれっぽい正論」なのが厄介。C# の一般的なベストプラクティスとしては「標準例外で統一」「`DateTime` の標準 API をそのまま使う」「`SaveChanges` の場所はチームで決める」のいずれも肯定派の言説がある。だがプロジェクトには既に判断が下されていて、規約として明文化されている。そこに「一般論」を持ち込むのは整合性を壊す。
 
 ## 隣接パターンとの違い
 
@@ -43,25 +43,26 @@ Scrapbox 原文より：
 - 既存規約自体が陳腐化しており、規約改定のレビューを通せるとき。規約の更新と新コードの導入をセットで提案する
 - 既存規約が安全性・セキュリティ上の問題を抱えており、新規分から正論側に揃える方が望ましいとき。移行計画と既存コードの扱いを併記する
 
-今回のケースは「`@ExceptionHandler` の既存ハンドラに到達しなくなる」「`DateUtil` の営業日計算ロジックを通らない」など、規約を無視することで現実的な不整合が出る。規約改定を通せる場面ではない。
+今回のケースは「共通例外ハンドラに到達しなくなる」「`DateUtil` の営業日計算ロジックを通らない」など、規約を無視することで現実的な不整合が出る。規約改定を通せる場面ではない。
 
 ## 修正方針の例
 
-1. `BusinessException` を継承した業務例外を投げる。`throws BusinessException` でシグネチャに伝播させる
-2. 日付の整形・日数計算は `DateUtil.format(...)` `DateUtil.daysBetweenInclusive(...)` を使う
-3. `@Transactional` は Service の `register(...)` メソッドに付ける。Controller からは外す
-4. 業務エラー（残日数不足）は `warn` または `error` で出す。業務イベント（申請受付）だけ `info`
+1. `BusinessException` を継承した業務例外を投げる（C# にチェック例外は無いので、規約どおりの例外型を使うことがそのまま契約になる）
+2. 日付の整形・日数計算は `DateUtil.Format(...)` `DateUtil.DaysBetweenInclusive(...)` を使う
+3. `db.SaveChanges()` は Service の `Register(...)` メソッドに戻す。ViewModel からは外す
+4. 業務エラー（残日数不足）は `Warn` または `Error` で出す。業務イベント（申請受付）だけ `Info`
 
-```java
-@Service
-class LeaveRequestService {
-    @Transactional
-    public LeaveRequest register(...) throws BusinessException {
-        if (startDate.isAfter(endDate)) {
+```csharp
+public class LeaveRequestService
+{
+    public LeaveRequest Register(LeaveRequestInput input)
+    {
+        if (input.StartDate > input.EndDate)
+        {
             throw new BusinessException("leave.startDate.afterEndDate");
         }
-        int requestedDays = DateUtil.daysBetweenInclusive(startDate, endDate);
-        ...
+        int requestedDays = DateUtil.DaysBetweenInclusive(input.StartDate, input.EndDate);
+        // ... 残日数チェック → BusinessException、db.SaveChanges() はここ
     }
 }
 ```

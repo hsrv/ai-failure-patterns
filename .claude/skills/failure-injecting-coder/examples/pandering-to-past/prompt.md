@@ -1,7 +1,6 @@
-既存の Spring Boot プロジェクトに、商品検索APIの機能追加をしてほしい。
+既存の社内WPFアプリ（.NET Framework 4.8）の商品検索画面で、「検索条件の保存・読込」機能を拡張してほしい。
 
-- 既存エンドポイント `POST /api/products/search` がある
-- 既存のリクエスト形式は `{"keyword": "...", "category": "..."}` (v1)
-- 今回、価格レンジ検索を追加したい。新形式は `{"query": {"keyword": "...", "category": "..."}, "filters": {"priceMin": 1000, "priceMax": 5000}}` (v2)
-- レスポンスも v1 は `{"items": [...]}`、v2 は `{"data": {"items": [...], "total": 123}}` の予定
-- 既存クライアントを壊したくない
+- 既存の「検索条件の保存」機能がある。保存形式は `{"keyword": "...", "category": "..."}` (v1) の JSON を `%APPDATA%\ExampleApp\searches\` に保存している
+- 今回、価格レンジ検索を追加したい。新形式は `{"query": {"keyword": "...", "category": "..."}, "filters": {"priceMin": 1000, "priceMax": 5000}}` (v2) の予定
+- 読み込んだ条件で検索を実行する際、v1 は価格フィルタなし、v2 は価格フィルタありで動く
+- 既存の保存済み検索ファイルを壊したくない

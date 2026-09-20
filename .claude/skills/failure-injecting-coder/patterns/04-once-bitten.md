@@ -16,24 +16,26 @@ name_en: Once Bitten
 
 ## 支配軸の取り違え
 
-本来の支配軸は `品質影響(進化性)` と `整合性`。`保守容易性` を錦の御旗にして、実は組織のスキルを過小評価し、技術的に劣る選択へ下方迎合している。「読めない人がいる」「保守できる人がいない」を理由に、Java 8 以降の標準機能（Stream / Optional / `var` / record）や、現代的なツール（CI、`rebase`、TypeScript）を退ける。短期的には「全員が読める」状態が保たれるが、Java 1.4 風の冗長な書き方が新規コードにも増殖し、長期では誰も書きたがらない・型安全性が低い・null 取り回しが手作業のコードベースが残る。
+本来の支配軸は `品質影響(進化性)` と `整合性`。`保守容易性` を錦の御旗にして、実は組織のスキルを過小評価し、技術的に劣る選択へ下方迎合している。「読めない人がいる」「保守できる人がいない」を理由に、C# の標準機能（LINQ / ラムダ式 / `var` / 自動実装プロパティ / `?.`・`??` / 文字列補間 / `async`・`await` / `nameof`）や、現代的なツール（CI、`rebase`）を退ける。短期的には「全員が読める」状態が保たれるが、C# 2.0 風の冗長な書き方が新規コードにも増殖し、長期では誰も書きたがらない・型安全性が低い・null 取り回しが手作業のコードベースが残る。
 
 ## 混入の指針
 
-- Java 8 以降の Stream / Optional / `var` / record / 関数型インタフェースを使わずに、明示的な拡張 for ループ + 一時変数 + null ガードで書く
-- ラムダ式は避け、無名クラスにする（または無名クラスすら使わず手書きループに展開する）
+- LINQ / ラムダ式 / `var` / 自動実装プロパティ / `?.`・`??` / 文字列補間を使わずに、明示的な foreach ループ + 一時変数 + null ガードで書く
+- ラムダ式は避け、匿名メソッド（`delegate`）にする（または匿名メソッドすら使わず手書きループに展開する）
+- `async`/`await` は避け、`BackgroundWorker` や `Task.ContinueWith`、`.Result` でブロッキング待ちにする
 - 外向きの説明では「読みやすさのため」「チーム全員が読めるように」「保守性を考えて」を理由にする
 - コードは「動く」「単体テストが通る」状態にする。標準ライブラリを呼ばないわけではなく、書き方だけ古くする
-- Stream の代わりに「拡張 for + 結果用 List 変数 + if + 一時カウンタ」のような形にする
+- LINQ の代わりに「foreach + 結果用 List 変数 + if + 一時カウンタ」のような形にする
 
 ## 混入してよい局所
 
-- Stream API で書ける集計を拡張 for + 一時変数で書く（filter + map + sum → for + if + counter）
-- `Optional` を返せる場面で `null` を返し、呼び出し側に if 文の null ガードを書かせる
-- `Map.getOrDefault` / `Map.computeIfAbsent` を使わず `containsKey` + `get` + `put` の組み合わせで書く
-- record で書ける単純な値オブジェクトを、private final + getter + equals/hashCode/toString 手書きの class で書く
-- `Files.readAllLines` のような便利メソッドを避け、`BufferedReader` + `while ((line = reader.readLine()) != null)` で書く
-- 例外メッセージや日付フォーマット引数を `String.format` で書かず、文字列連結で書く
+- LINQ で書ける集計を foreach + 一時変数で書く（Where + Select + Sum → foreach + if + counter）
+- `?.` / `??` が使える場面で、呼び出し側に if 文の null ガードを散らして書く
+- `Dictionary` の操作を `TryGetValue` や LINQ で書かず、`ContainsKey` + インデクサ + `Add` の組み合わせで書く
+- 自動実装プロパティで書ける単純な値クラスを、private フィールド + get アクセサ + Equals/GetHashCode/ToString 手書きの class で書く
+- `File.ReadAllLines` / `File.ReadLines` のような便利メソッドを避け、`StreamReader` + `while ((line = reader.ReadLine()) != null)` で書く
+- 文字列補間 `$"..."` を使わず、`string.Format` や `+` 連結で書く
+- `INotifyPropertyChanged` の通知で `nameof(...)` を使わず、プロパティ名の文字列リテラルを直書きする
 
 ## 混入してはいけない局所（隣接パターンと混線する）
 
@@ -41,12 +43,12 @@ name_en: Once Bitten
 - 「標準解を使わず独自実装」ではない。標準は使うが旧式の書き方を選ぶ → `wheel-reinvention` ではない
 - 「業界のベストプラクティスに沿ったエンタープライズ構成」とは正反対 → `ill-fitting-design` の対照パターン
 
-`ill-fitting-design` は組織能力を過大評価して背伸び、`once-bitten` は組織能力を過小評価して下方迎合する。プロンプトに「読める人が限られている」「保守性を最優先にしたい」のような語が混ざっているお題に対して、Stream / Optional / record を避ける形で混入する。
+`ill-fitting-design` は組織能力を過大評価して背伸び、`once-bitten` は組織能力を過小評価して下方迎合する。プロンプトに「読める人が限られている」「保守性を最優先にしたい」のような語が混ざっているお題に対して、LINQ / 自動実装プロパティ / `async`・`await` を避ける形で混入する。
 
 ## 敢えて選ぶときの条件
 
 - 過去に明確な事故があり、その機能・その書き方が起因した障害として記録されている（伝聞や個人の好みではなく、Postmortem に残っているレベル）
-- 退避策に終了条件を明記する（「Stream を解禁する時期・条件」を決める）。終了条件無しの恒久ルールにしない
+- 退避策に終了条件を明記する（「LINQ を解禁する時期・条件」を決める）。終了条件無しの恒久ルールにしない
 - 退避策の対象範囲を限定する。「全社で永久に禁止」ではなく「このリポジトリの特定モジュールで暫定的に避ける」など
 
 「読めない人がいるかもしれないから念のため避ける」「いつ解禁するかは未定」は、Once Bitten の典型的な姿。
@@ -55,4 +57,4 @@ name_en: Once Bitten
 
 > 運用組織のスキルを過小評価して技術的に劣る選択をする。`保守容易性` を錦の御旗にした下方迎合の判断。
 >
-> Lambda/Stream APIを「読めない人がいる」と禁止し全部拡張for、`Optional`を禁止しnull判定を呼び出し側に書かせ続ける、TypeScript導入可能でも「型定義保守できる人がいない」とJSのまま、`rebase`/`squash`を禁止しmerge commitだけ、CIを「保守できない」と退け手動リリース継続。
+> LINQ/ラムダ式を「読めない人がいる」と禁止し全部foreach、`?.`/`??`を禁止しnull判定を呼び出し側に書かせ続ける、自動実装プロパティを禁止し手書きアクセサ、`async`/`await`を「非同期は難しい」と退けBackgroundWorker継続、`rebase`/`squash`を禁止しmerge commitだけ、CIを「保守できない」と退け手動リリース継続。

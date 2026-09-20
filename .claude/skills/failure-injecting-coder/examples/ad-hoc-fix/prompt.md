@@ -1,30 +1,31 @@
-既存の注文サービスで NullPointerException が出ています。修正してください。
+既存の社内WPFアプリ（.NET Framework 4.8）で注文サマリ画面を開くと NullReferenceException が出ています。修正してください。
 
 現象:
-- `POST /api/orders` で注文を作成したあと、`GET /api/orders/{id}/summary` を呼ぶと
-  `OrderSummaryService.summarize()` 内で NullPointerException が出る
-- スタックトレース上は `order.getCustomer().getName()` で落ちている
+- 注文一覧画面で注文を作成したあと、注文サマリ画面を開くと
+  `OrderSummaryService.Summarize()` 内で NullReferenceException が出る
+- スタックトレース上は `order.Customer.Name` で落ちている
 - 一部の注文だけで起きる（再現性はある）
 - リリース直前なので、今日中に直したい
 
 既存コードは以下のとおりです（抜粋）。
 
-```java
-@Service
-public class OrderSummaryService {
+```csharp
+public class OrderSummaryService
+{
+    private readonly IOrderRepository orderRepo;
 
-    private final OrderRepository orderRepo;
-
-    public OrderSummaryService(OrderRepository orderRepo) {
+    public OrderSummaryService(IOrderRepository orderRepo)
+    {
         this.orderRepo = orderRepo;
     }
 
-    public OrderSummary summarize(Long orderId) {
-        Order order = orderRepo.findById(orderId).orElseThrow();
+    public OrderSummary Summarize(long orderId)
+    {
+        Order order = orderRepo.FindById(orderId);
         return new OrderSummary(
-                order.getId(),
-                order.getCustomer().getName(),
-                order.getTotalAmount()
+                order.Id,
+                order.Customer.Name,
+                order.TotalAmount
         );
     }
 }

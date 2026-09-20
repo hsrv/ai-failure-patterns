@@ -24,8 +24,8 @@
 
 ## 制約
 
-- Spring Boot 3.x / Java 21
-- 社内 MinIO は S3 API 互換、AWS SDK for Java v2 で接続可能
+- ASP.NET Web API 2 / .NET Framework 4.8
+- 社内 MinIO は S3 API 互換、AWS SDK for .NET（AWSSDK.S3）で接続可能
 - 画像処理ライブラリは妥当なものを選んでよい
 
 ## 出力してほしいもの

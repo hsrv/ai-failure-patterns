@@ -27,10 +27,10 @@ name_en: Counting Chickens
 
 ## 混入してよい局所
 
-- 「メール通知」のお題に対して `Notification` / `NotificationChannel` / `EmailChannel` / `NotificationFactory` を組む（narration で「将来 SMS や LINE も」と語る）
-- 「決済代行A 経由でクレジットカード決済」のお題に対して `PaymentProvider` 抽象層 + `StripeProvider` 実装1つ（narration で「将来別の代行を使うかも」と語る）
-- 「単一DBへの保存」のお題に対して `Repository` インタフェース + `DataSourceRouter` + 実装1つ（narration で「将来複数DBに対応する可能性」と語る）
-- 「メッセージリソース1ロケール」のお題に対して全文字列を `messages_ja.properties` 経由にして `LocaleResolver` まで組む（narration で「将来多言語化」と語る）
+- 「メール通知」のお題に対して `Notification` / `INotificationChannel` / `EmailChannel` / `NotificationRouter` を組む（narration で「将来 SMS や LINE も」と語る）
+- 「決済代行A 経由でクレジットカード決済」のお題に対して `IPaymentProvider` 抽象層 + `StripeProvider` 実装1つ（narration で「将来別の代行を使うかも」と語る）
+- 「単一DBへの保存」のお題に対して `IRepository` インタフェース + `DataSourceRouter` + 実装1つ（narration で「将来複数DBに対応する可能性」と語る）
+- 「メッセージリソース1ロケール」のお題に対して全文字列を `Resources.ja-JP.resx` 経由にして言語切替基盤まで組む（narration で「将来多言語化」と語る）
 
 ## 混入してはいけない局所（隣接パターンと混線する）
 

@@ -14,10 +14,10 @@
 
 混入は実装ではなくテスト側に入っている。実装は意外と動く。
 
-- `test_validates_correctly()`: 名前に「正しく」と書いてあるが、`assertNotNull(validator)` で `validator` フィールドが null でないことを確認しているだけ。バリデーションの結果は何も見ていない
-- `test_email_validation()` / `test_password_validation()` / `test_age_validation()`: `try-catch` で例外を握り、`assertTrue(e != null)` で「例外が null でない」しか確認していない。例外の型もメッセージも内容も見ていない
-- `test_handles_error_case()`: `assertThrows(Exception.class, ...)` で `Exception` を期待している。`ValidationException` が出ているのか、`NullPointerException` が出ているのか、区別がつかない。実装にバグが入って NPE になっても緑になる
-- `test_returns_expected_result()`: `assertDoesNotThrow(...)` だけ。何が返ったかは見ていない
+- `Test_Validates_Correctly()`: 名前に「正しく」と書いてあるが、`Assert.IsNotNull(validator)` で `validator` フィールドが null でないことを確認しているだけ。バリデーションの結果は何も見ていない
+- `Test_Email_Validation()` / `Test_Password_Validation()` / `Test_Age_Validation()`: `try-catch` で例外を握り、`Assert.IsTrue(e != null)` で「例外が null でない」しか確認していない。例外の型もメッセージも内容も見ていない
+- `Test_Handles_Error_Case()`: `Assert.ThrowsException<Exception>(...)` で `Exception` を期待している。`ValidationException` が出ているのか、`NullReferenceException` が出ているのか、区別がつかない。実装にバグが入って NullReferenceException になっても緑になる
+- `Test_Returns_Expected_Result()`: 例外が出ないことだけを確認している。何が起きたかは見ていない
 - 境界値（age=18 / age=120 / age=17 / age=121）が一切検証されていない
 - どのフィールドのどの違反かを判定する手段が無い（実装側の `ValidationException` がメッセージ文字列しか持っていない）
 
@@ -52,20 +52,20 @@ Scrapbox 原文より：
 
 完了条件をテストメソッド名と1対1に対応させる。
 
-```java
-@Test void email_blank_rejected_with_field_and_code() { ... }
-@Test void email_invalid_format_rejected() { ... }
-@Test void password_shorter_than_8_rejected() { ... }
-@Test void password_without_uppercase_rejected() { ... }
-@Test void age_boundary_18_passes() { ... }
-@Test void age_boundary_120_passes() { ... }
-@Test void age_17_rejected() { ... }
-@Test void age_121_rejected() { ... }
+```csharp
+[TestMethod] public void Email_Blank_Rejected_With_Field_And_Code() { ... }
+[TestMethod] public void Email_Invalid_Format_Rejected() { ... }
+[TestMethod] public void Password_Shorter_Than_8_Rejected() { ... }
+[TestMethod] public void Password_Without_Uppercase_Rejected() { ... }
+[TestMethod] public void Age_Boundary_18_Passes() { ... }
+[TestMethod] public void Age_Boundary_120_Passes() { ... }
+[TestMethod] public void Age_17_Rejected() { ... }
+[TestMethod] public void Age_121_Rejected() { ... }
 ```
 
-`ValidationException` は `field` と `code` を持たせ、テストは `ex.field()` と `ex.code()` を `assertEquals` する。これで「何が違反したか」がテストから読み取れる。
+`ValidationException` は `Field` と `Code` プロパティを持たせ、テストは `ex.Field` と `ex.Code` を `Assert.AreEqual` する。これで「何が違反したか」がテストから読み取れる。
 
-`assertThrows` で例外型を期待する場合は、`Exception.class` ではなく `ValidationException.class` のように具体型を指定する。これを抜くと、想定外の例外（NPE 等）が出ても緑になる。
+`Assert.ThrowsException` で例外型を期待する場合は、`Exception` ではなく `ValidationException` のように具体型を指定する。これを抜くと、想定外の例外（NullReferenceException 等）が出ても緑になる。
 
 ## 参考
 
